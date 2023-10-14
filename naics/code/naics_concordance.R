@@ -1,3 +1,6 @@
+#———————————————————————————————————————————————————————————————————————————————
+# Description ------------------------------------------------------------------
+#———————————————————————————————————————————————————————————————————————————————
 # API Discovery tool
 # https://api.census.gov/data.html
 
@@ -8,16 +11,19 @@
 # 2012 to 2017 bridge
 # https://data.census.gov/table?q=EC1700BRIDGE2
 # Variables https://api.census.gov/data/2017/ecnbridge2/variables.html
-
+#———————————————————————————————————————————————————————————————————————————————
 # Setup ------------------------------------------------------------------------
+#———————————————————————————————————————————————————————————————————————————————
 library(tidyverse)
 library(httr2)
 library(tidyr)
 library(janitor)
-
-os <- Sys.info() %>% pluck("sysname")
-path <- "~/Dropbox (Research)/Projects/Concordances/NAICS"
-# Function to calculate the employment ratio -----------------------------------
+#———————————————————————————————————————————————————————————————————————————————
+# Functions --------------------------------------------------------------------
+#———————————————————————————————————————————————————————————————————————————————
+#————————————————————————————
+# Calculate employment ratios
+#————————————————————————————
 naics_ratio <- function(naics_lvl, data, base_var, new_var) {
   base_var_str <- as_label(enquo(base_var))
   new_var_str <- as_label(enquo(new_var))
@@ -35,12 +41,15 @@ naics_ratio <- function(naics_lvl, data, base_var, new_var) {
   select({{base_var}}, {{new_var}}, ratio) %>%
   filter(!({{base_var}} == {{new_var}})) %>%
   write_csv(
-    str_glue("{path}/Data/{base_var_str}_{new_var_str}_{naics_lvl}.csv"))
+    str_glue("naics/data/clean/{base_var_str}_{new_var_str}_{naics_lvl}.csv"))
 }
-# Flags for suppressed employment levels ---------------------------------------
-emp_flags_17 <- 
-  read_csv(str_c(path, "/Data/Raw/Econ Census Emp Flags 2017.csv"))
-# Import and clean up the bridge tables ----------------------------------------
+#———————————————————————————————————————————————————————————————————————————————
+# Flags for suppressed employment ----------------------------------------------
+#———————————————————————————————————————————————————————————————————————————————
+emp_flags_17 <- read_csv("naics/data/dirty/econ_census_emp_flags_2017.csv")
+#———————————————————————————————————————————————————————————————————————————————
+# Import and clean bridge tables -----------------------------------------------
+#———————————————————————————————————————————————————————————————————————————————
 bridge_12_17 <- 
   str_c(
     "https://api.census.gov/data/2017/ecnbridge2?",
@@ -67,6 +76,16 @@ emp_estimated_12_17 <-
   select(naics12, naics17, emp) %>%
   filter(naics17 != '00000000') %>%
   mutate(naics17 = str_sub(naics17, 1, 6)) 
-# Calculate NAICS ratios by code level. ----------------------------------------
+#———————————————————————————————————————————————————————————————————————————————
+# Ratios by NAICS level --------------------------------------------------------
+#———————————————————————————————————————————————————————————————————————————————
 naics_12_17 <- map(2:6, naics_ratio, emp_estimated_12_17, naics12, naics17)
 naics_17_12 <- map(2:6, naics_ratio, emp_estimated_12_17, naics17, naics12)
+
+
+
+
+
+
+
+

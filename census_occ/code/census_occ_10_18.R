@@ -13,12 +13,17 @@ library(tidyverse)
 library(janitor)
 library(readxl)
 #———————————————————————————————————————————————————————————————————————————————
-# Clean the table --------------------------------------------------------------
+# Clean  --------------------------------------------------------------
 #———————————————————————————————————————————————————————————————————————————————
 # The Excel file is a slightly cleaned version of references/table-h1_h2.xlsx,
 # sheet Template_Back_DO NOT EDIT
-census_occ_10_18 <-
-  read_excel("census_occ/data/dirty/conversion_rates.xlsx") |>
+b24124_2017_occ10 <-
+  read_excel(
+    "census_occ/data/raw/table-h1_h2.xlsx",
+    sheet = "Example 2017",
+    range = "a14:d540") 
+
+|>
   mutate(
     occ10 = as.integer(occ10),
     occ18 = as.integer(occ18)

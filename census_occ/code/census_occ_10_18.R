@@ -25,13 +25,13 @@ b24124_2017_occ10 <-
   clean_names() |>
   rename(
     occ10_nm = x2010_occupation_description,
-    occ10 = x2010_occupation_code,
-    emp17 = estimate_from_table) |>
+    occ10    = x2010_occupation_code,
+    emp17_10 = estimate_from_table) |>
   drop_na() |>
   mutate(
-    occ10 = str_replace_all(occ10, ", ", "_"),
-    emp17 = str_replace_all(emp17, ",", ""),
-    emp17 = as.integer(emp17))
+    occ10    = str_replace_all(occ10, ", ", "_"),
+    emp17_10 = str_replace_all(emp17_10, ",", ""),
+    emp17_10 = as.integer(emp17_10))
 b24124_2017_occ18 <-
   read_excel(
     "census_occ/data/raw/table-h1_h2.xlsx",
@@ -40,8 +40,8 @@ b24124_2017_occ18 <-
   clean_names() |>
   rename(
     occ18_nm = x2018_occupation_description,
-    occ18 = x2018_occupation_code,
-    emp17 = converted_estimate) |>
+    occ18    = x2018_occupation_code,
+    emp17_18 = converted_estimate) |>
   drop_na() |>
   mutate(
     occ18 = str_replace_all(occ18, ", ", "_"),
@@ -58,8 +58,7 @@ concord_base <-
   rename(
     occ10 = x2010_census_code,
     type = x3,
-    occ18 = x2018_census_code
-  ) 
+    occ18 = x2018_census_code) 
 code_changes <-
   concord_base |>
   select(occ10, type) |>
@@ -69,5 +68,15 @@ concordance <-
   select(occ10, occ18) |>
   fill(occ10) |>
   drop_na() |>
+  #Combine codes to match the employment data.
+  mutate(
+    occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
+    occ18 = str_replace(occ18, "1830|1860", "1830_1860"),
+    occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
+    occ18 = str_replace(occ18, "1830|1860", "1830_1860"))
+
+|>
   left_join(code_changes) |>
-  left_join(b24124_2017_occ10)  
+  left_join(b24124_2017_occ10) |>
+  left_join(b24124_2017_occ18) |>
+  drop_na()

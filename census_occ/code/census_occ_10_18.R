@@ -71,11 +71,21 @@ concordance <-
   #Combine codes to match the employment data.
   mutate(
     occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
+    occ10 = str_replace(occ10, "2900|2960", "2900_2960"),
+    occ10 = str_replace(occ10, "3235|3245", "3235_3245"),
+    occ10 = str_replace(occ10, "6100|6110", "6100_6110"),
+    occ10 = str_replace(occ10, "6310|6320", "6310_6320"),
+    occ10 = str_replace(occ10, "6540|6765", "6540_6765"),
+    occ10 = str_replace(occ10, "7440|7630", "7440_7630"),
+    occ10 = str_replace(occ10, "8255|8256", "8255_8256"),
+    occ10 = str_replace(occ10, "8430|8460", "8430_8460"),
+    occ10 = str_replace(occ10, "8520|8550", "8520_8550"),
     occ18 = str_replace(occ18, "1830|1860", "1830_1860"),
-    occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
-    occ18 = str_replace(occ18, "1830|1860", "1830_1860"))
-
-|>
+    occ18 = str_replace(occ18, "2905|2970", "2905_2970"),
+    occ18 = str_replace(occ18, "3235|3245", "3235_3245"),
+    occ18 = str_replace(occ18, "6765|6540", "6765_6540"),
+    occ18 = str_replace(occ18, "7440|7640", "7440_7640"),
+    occ18 = str_replace(occ18, "8255|8256", "8255_8256"))|>
   left_join(code_changes) |>
   left_join(b24124_2017_occ10) |>
   left_join(b24124_2017_occ18) |>

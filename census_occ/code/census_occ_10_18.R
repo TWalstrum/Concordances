@@ -68,7 +68,7 @@ concordance <-
   fill(occ10) |>
   drop_na() |>
   left_join(changes) |>
-  #Combine codes to match the employment data.
+  # Combine codes to match the employment data.
   mutate(
     occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
     occ10 = str_replace(occ10, "2900|2960", "2900_2960"),
@@ -77,6 +77,7 @@ concordance <-
     occ10 = str_replace(occ10, "6310|6320", "6310_6320"),
     occ10 = str_replace(occ10, "6540|6765", "6540_6765"),
     occ10 = str_replace(occ10, "7440|7630", "7440_7630"),
+    type  = if_else(occ10 == "7440_7630", "Agg", type),
     occ10 = str_replace(occ10, "8255|8256", "8255_8256"),
     occ10 = str_replace(occ10, "8430|8460", "8430_8460"),
     occ10 = str_replace(occ10, "8520|8550", "8520_8550"),
@@ -87,9 +88,12 @@ concordance <-
     occ18 = str_replace(occ18, "7440|7640", "7440_7640"),
     occ18 = str_replace(occ18, "8255|8256", "8255_8256")) |>
   distinct() |>
-  left_join(b24124_2017_occ10) |>
-  # Drop military occupations.
-  drop_na()
+  # Deal with complex cases. 2900_2960; 7440_7640;
+  full_join(b24124_2017_occ10) |>
+  # Drop military occupations (9800 and higher).
+  drop_na() |>
+  mutate(emp = ratio_10_18 * emp17_10) |>
+  summarize(emp17_18 = sum(emp), .by = "occ18")
 
 
 concordance <-

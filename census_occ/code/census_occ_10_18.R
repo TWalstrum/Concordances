@@ -32,43 +32,72 @@ b24124_2017_occ10 <-
     occ10    = str_replace_all(occ10, ", ", "_"),
     emp17_10 = str_replace_all(emp17_10, ",", ""),
     emp17_10 = as.integer(emp17_10))
-b24124_2017_occ18 <-
-  read_excel(
-    "census_occ/data/raw/table-h1_h2.xlsx",
-    sheet = "Example 2017",
-    range = "f14:h580") |>
-  clean_names() |>
-  rename(
-    occ18_nm = x2018_occupation_description,
-    occ18    = x2018_occupation_code,
-    emp17_18 = converted_estimate) |>
-  drop_na() |>
-  mutate(
-    occ18 = str_replace_all(occ18, ", ", "_"),
-    # In the B24124, occ code 1860 is combined with occ code 1830.
-    occ18 = str_replace(occ18, "1860", "1830_1860"),
-    # In the B24124, occ code 3235 is combined with occ code 3245.
-    occ18 = str_replace(occ18, "3245", "3235_3245"))
 concord_base <-
   read_excel(
     "census_occ/data/raw/table-h1_h2.xlsx",
     sheet = "Template_Back_DO NOT EDIT",
-    range = "b4:g693") |>
+    range = "b4:h693") |>
   clean_names() |>
+  remove_empty() |>
+  select(!x2018_soc_code) |>
   rename(
     occ10 = x2010_census_code,
+    occ10_nm = x2010_soc_title,
     type = x3,
-    occ18 = x2018_census_code) 
-code_changes <-
+    ratio_10_18 = total_conversion_rate,
+    occ18 = x2018_census_code,
+    occ18_nm = x2018_soc_title)
+occ10_nm <-
+  concord_base |>
+  select(occ10, occ10_nm) |>
+  distinct() |>
+  drop_na()
+occ18_nm <-
+  concord_base |>
+  select(occ18, occ18_nm) |>
+  distinct() |>
+  drop_na()
+changes <-
   concord_base |>
   select(occ10, type) |>
+  remove_empty() |>
+  mutate(type = replace_na(type, "None"))
+concordance <-
+  concord_base |>
+  select(occ10, occ18, ratio_10_18) |>
+  fill(occ10) |>
+  drop_na() |>
+  left_join(changes) |>
+  #Combine codes to match the employment data.
+  mutate(
+    occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
+    occ10 = str_replace(occ10, "2900|2960", "2900_2960"),
+    occ10 = str_replace(occ10, "3235|3245", "3235_3245"),
+    occ10 = str_replace(occ10, "6100|6110", "6100_6110"),
+    occ10 = str_replace(occ10, "6310|6320", "6310_6320"),
+    occ10 = str_replace(occ10, "6540|6765", "6540_6765"),
+    occ10 = str_replace(occ10, "7440|7630", "7440_7630"),
+    occ10 = str_replace(occ10, "8255|8256", "8255_8256"),
+    occ10 = str_replace(occ10, "8430|8460", "8430_8460"),
+    occ10 = str_replace(occ10, "8520|8550", "8520_8550"),
+    occ18 = str_replace(occ18, "1830|1860", "1830_1860"),
+    occ18 = str_replace(occ18, "2905|2970", "2905_2970"),
+    occ18 = str_replace(occ18, "3235|3245", "3235_3245"),
+    occ18 = str_replace(occ18, "6765|6540", "6765_6540"),
+    occ18 = str_replace(occ18, "7440|7640", "7440_7640"),
+    occ18 = str_replace(occ18, "8255|8256", "8255_8256")) |>
+  distinct() |>
+  left_join(b24124_2017_occ10) |>
+  # Drop military occupations.
   drop_na()
+
+
 concordance <-
   concord_base |>
   select(occ10, occ18) |>
   fill(occ10) |>
   drop_na() |>
-  #Combine codes to match the employment data.
+  # Combine codes to match the employment data.
   mutate(
     occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
     occ10 = str_replace(occ10, "2900|2960", "2900_2960"),
@@ -89,4 +118,22 @@ concordance <-
   left_join(code_changes) |>
   left_join(b24124_2017_occ10) |>
   left_join(b24124_2017_occ18) |>
-  drop_na()
+  drop_na() |>
+  
+# b24124_2017_occ18 <-
+#   read_excel(
+#     "census_occ/data/raw/table-h1_h2.xlsx",
+#     sheet = "Example 2017",
+#     range = "f14:h580") |>
+#   clean_names() |>
+#   rename(
+#     occ18_nm = x2018_occupation_description,
+#     occ18    = x2018_occupation_code,
+#     emp17_18 = converted_estimate) |>
+#   drop_na() |>
+#   mutate(
+#     occ18 = str_replace_all(occ18, ", ", "_"),
+#     # In the B24124, occ code 1860 is combined with occ code 1830.
+#     occ18 = str_replace(occ18, "1860", "1830_1860"),
+#     # In the B24124, occ code 3235 is combined with occ code 3245.
+#     occ18 = str_replace(occ18, "3245", "3235_3245"))

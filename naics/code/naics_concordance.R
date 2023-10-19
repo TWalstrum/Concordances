@@ -41,12 +41,12 @@ naics_ratio <- function(naics_lvl, data, base_var, new_var) {
   select({{base_var}}, {{new_var}}, ratio) %>%
   filter(!({{base_var}} == {{new_var}})) %>%
   write_csv(
-    str_glue("naics/data/clean/{base_var_str}_{new_var_str}_{naics_lvl}.csv"))
+    str_glue("naics/data/refined/{base_var_str}_{new_var_str}_{naics_lvl}.csv"))
 }
 #———————————————————————————————————————————————————————————————————————————————
 # Flags for suppressed employment ----------------------------------------------
 #———————————————————————————————————————————————————————————————————————————————
-emp_flags_17 <- read_csv("naics/data/dirty/econ_census_emp_flags_2017.csv")
+emp_flags_17 <- read_csv("naics/data/raw/econ_census_emp_flags_2017.csv")
 #———————————————————————————————————————————————————————————————————————————————
 # Import and clean bridge tables -----------------------------------------------
 #———————————————————————————————————————————————————————————————————————————————

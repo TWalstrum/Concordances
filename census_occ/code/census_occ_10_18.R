@@ -32,6 +32,23 @@ b24124_2017_occ10 <-
     occ10    = str_replace_all(occ10, ", ", "_"),
     emp17_10 = str_replace_all(emp17_10, ",", ""),
     emp17_10 = as.integer(emp17_10))
+b24124_2017_occ18 <-
+  read_excel(
+    "census_occ/data/raw/table-h1_h2.xlsx",
+    sheet = "Example 2017",
+    range = "f14:h580") |>
+  clean_names() |>
+  rename(
+    occ18_nm = x2018_occupation_description,
+    occ18    = x2018_occupation_code,
+    emp17_18 = converted_estimate) |>
+  drop_na() |>
+  mutate(
+    occ18 = str_replace_all(occ18, ", ", "_"),
+    # In the B24124, occ code 1860 is combined with occ code 1830.
+    occ18 = str_replace(occ18, "1860", "1830_1860"),
+    # In the B24124, occ code 3235 is combined with occ code 3245.
+    occ18 = str_replace(occ18, "3245", "3235_3245"))
 concord_base <-
   read_excel(
     "census_occ/data/raw/table-h1_h2.xlsx",
@@ -71,73 +88,110 @@ concordance <-
   # Combine codes to match the employment data.
   mutate(
     occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
-    occ10 = str_replace(occ10, "2900|2960", "2900_2960"),
     occ10 = str_replace(occ10, "3235|3245", "3235_3245"),
     occ10 = str_replace(occ10, "6100|6110", "6100_6110"),
     occ10 = str_replace(occ10, "6310|6320", "6310_6320"),
     occ10 = str_replace(occ10, "6540|6765", "6540_6765"),
     occ10 = str_replace(occ10, "7440|7630", "7440_7630"),
+    # 7440 isn't labeled Agg because it is a 1-1 match in the ratio table.
     type  = if_else(occ10 == "7440_7630", "Agg", type),
     occ10 = str_replace(occ10, "8255|8256", "8255_8256"),
     occ10 = str_replace(occ10, "8430|8460", "8430_8460"),
     occ10 = str_replace(occ10, "8520|8550", "8520_8550"),
     occ18 = str_replace(occ18, "1830|1860", "1830_1860"),
-    occ18 = str_replace(occ18, "2905|2970", "2905_2970"),
     occ18 = str_replace(occ18, "3235|3245", "3235_3245"),
     occ18 = str_replace(occ18, "6765|6540", "6765_6540"),
     occ18 = str_replace(occ18, "7440|7640", "7440_7640"),
-    occ18 = str_replace(occ18, "8255|8256", "8255_8256")) |>
+    occ18 = str_replace(occ18, "8255|8256", "8255_8256"), 
+    # In the employment data, occ10 codes 2900 and 2960 are combined. The ratios
+    # provided are not for this combined group and it is necessary to make an 
+    # assumption about what share of the combined employment is in 2900 and 
+    # what is in 2960. Since 2960 is a catchall, I assume it is the bigger group
+    # and assign it 75% of the combined employment. To do this, I adjust the 
+    # relationships for occ10 code 2900 and drop the relationships for occ10
+    # code 2960.
+    ratio_10_18 = 
+      if_else(
+        occ10 == "2900" & occ18 == "2905", 
+        0.75 + 0.25 * ratio_10_18, 
+        ratio_10_18),
+    ratio_10_18 = 
+      if_else(
+        occ10 == "2900" & occ18 == "5040", 
+        0.25 * ratio_10_18, 
+        ratio_10_18),
+    occ10 = str_replace(occ10, "2900", "2900_2960"),
+    occ18 = str_replace(occ18, "2905", "2905_2970"),
+    # The weights don't always sum to 0.9999 for some occ codes. I add
+    # 0.0001 to the largest weight.
+    ratio_10_18 = 
+      if_else(
+        occ10 == "4250" & occ18 == "4251", 
+        ratio_10_18 + 0.0001, 
+        ratio_10_18),
+    ratio_10_18 = 
+      if_else(
+        occ10 == "3420" & occ18 == "3424", 
+        ratio_10_18 + 0.0001, 
+        ratio_10_18),
+    ratio_10_18 = 
+      if_else(
+        occ10 == "3420" & occ18 == "3424", 
+        ratio_10_18 + 0.0001, 
+        ratio_10_18),
+    ratio_10_18 = 
+      if_else(
+        occ10 == "9120" & occ18 == "9121", 
+        ratio_10_18 + 0.0001, 
+        ratio_10_18),
+    ratio_10_18 = 
+      if_else(
+        occ10 == "4520" & occ18 == "4521", 
+        ratio_10_18 + 0.0001, 
+        ratio_10_18)
+    ) |>
+  filter(!(occ10 == "2960")) |>
   distinct() |>
-  # Deal with complex cases. 2900_2960; 7440_7640;
   full_join(b24124_2017_occ10) |>
   # Drop military occupations (9800 and higher).
   drop_na() |>
   mutate(emp = ratio_10_18 * emp17_10) |>
-  summarize(emp17_18 = sum(emp), .by = "occ18")
-
-
-concordance <-
-  concord_base |>
-  select(occ10, occ18) |>
-  fill(occ10) |>
-  drop_na() |>
-  # Combine codes to match the employment data.
-  mutate(
-    occ10 = str_replace(occ10, "1830|1860", "1830_1860"),
-    occ10 = str_replace(occ10, "2900|2960", "2900_2960"),
-    occ10 = str_replace(occ10, "3235|3245", "3235_3245"),
-    occ10 = str_replace(occ10, "6100|6110", "6100_6110"),
-    occ10 = str_replace(occ10, "6310|6320", "6310_6320"),
-    occ10 = str_replace(occ10, "6540|6765", "6540_6765"),
-    occ10 = str_replace(occ10, "7440|7630", "7440_7630"),
-    occ10 = str_replace(occ10, "8255|8256", "8255_8256"),
-    occ10 = str_replace(occ10, "8430|8460", "8430_8460"),
-    occ10 = str_replace(occ10, "8520|8550", "8520_8550"),
-    occ18 = str_replace(occ18, "1830|1860", "1830_1860"),
-    occ18 = str_replace(occ18, "2905|2970", "2905_2970"),
-    occ18 = str_replace(occ18, "3235|3245", "3235_3245"),
-    occ18 = str_replace(occ18, "6765|6540", "6765_6540"),
-    occ18 = str_replace(occ18, "7440|7640", "7440_7640"),
-    occ18 = str_replace(occ18, "8255|8256", "8255_8256"))|>
-  left_join(code_changes) |>
-  left_join(b24124_2017_occ10) |>
-  left_join(b24124_2017_occ18) |>
-  drop_na() |>
+  select(occ10, occ18, emp)
+# Employment by occ code
+occ10 <-
+  concordance |>
+  summarize(emp10 = sum(emp), .by = "occ10")
+occ18 <-
+  concordance |>
+  summarize(emp18 = sum(emp), .by = "occ18")
+# Validate employment sums.
+occ10_check <-
+  occ10 |>
+  full_join(b24124_2017_occ10) |>
+  mutate(diff = emp10 - emp17_10)
+summary(occ10_check)
+occ18_check <-
+  occ18 |>
+  full_join(b24124_2017_occ18) |>
+  mutate(diff = emp18 - emp17_18)
+summary(occ18_check)
+# Calculate final weights.
+occ10_occ18 <-
+  concordance |>
+  full_join(occ10) |>
+  mutate(ratio = emp / emp10) |>
+  select(occ10, occ18, ratio)
+occ18_occ10 <-
+  concordance |>
+  full_join(occ18) |>
+  mutate(ratio = emp / emp18) |>
+  select(occ10, occ18, ratio) |>
+  relocate(occ18, occ10, ratio)
   
-# b24124_2017_occ18 <-
-#   read_excel(
-#     "census_occ/data/raw/table-h1_h2.xlsx",
-#     sheet = "Example 2017",
-#     range = "f14:h580") |>
-#   clean_names() |>
-#   rename(
-#     occ18_nm = x2018_occupation_description,
-#     occ18    = x2018_occupation_code,
-#     emp17_18 = converted_estimate) |>
-#   drop_na() |>
-#   mutate(
-#     occ18 = str_replace_all(occ18, ", ", "_"),
-#     # In the B24124, occ code 1860 is combined with occ code 1830.
-#     occ18 = str_replace(occ18, "1860", "1830_1860"),
-#     # In the B24124, occ code 3235 is combined with occ code 3245.
-#     occ18 = str_replace(occ18, "3245", "3235_3245"))
+
+
+
+
+
+
+

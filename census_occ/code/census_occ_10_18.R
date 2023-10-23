@@ -180,14 +180,15 @@ occ10_occ18 <-
   concordance |>
   full_join(occ10) |>
   mutate(ratio = emp / emp10) |>
-  select(occ10, occ18, ratio)
+  select(occ10, occ18, ratio) |>
+  write_csv("census_occ/data/refined/occ10_occ18.csv")
 occ18_occ10 <-
   concordance |>
   full_join(occ18) |>
   mutate(ratio = emp / emp18) |>
   select(occ10, occ18, ratio) |>
-  relocate(occ18, occ10, ratio)
-  
+  relocate(occ18, occ10, ratio) |>
+  write_csv("census_occ/data/refined/occ18_occ10.csv")
 
 
 

@@ -45,10 +45,12 @@ b24124_2017_occ18 <-
   drop_na() |>
   mutate(
     occ18 = str_replace_all(occ18, ", ", "_"),
-    # In the B24124, occ code 1860 is combined with occ code 1830.
+    # In B24124, occ code 1860 is combined with occ code 1830.
     occ18 = str_replace(occ18, "1860", "1830_1860"),
-    # In the B24124, occ code 3235 is combined with occ code 3245.
-    occ18 = str_replace(occ18, "3245", "3235_3245"))
+    # In B24124, occ code 3235 is combined with occ code 3245.
+    occ18 = str_replace(occ18, "3245", "3235_3245"),
+    # In B24124, the code numbers are reversed for the combo of 6540 and 6765.)
+    occ18 = str_replace(occ18, "6765_6540", "6540_6765"))
 concord_base <-
   read_excel(
     "census_occ/data/raw/table-h1_h2.xlsx",
@@ -100,16 +102,17 @@ concordance <-
     occ10 = str_replace(occ10, "8520|8550", "8520_8550"),
     occ18 = str_replace(occ18, "1830|1860", "1830_1860"),
     occ18 = str_replace(occ18, "3235|3245", "3235_3245"),
-    occ18 = str_replace(occ18, "6765|6540", "6765_6540"),
+    occ18 = str_replace(occ18, "6540|6765", "6540_6765"),
     occ18 = str_replace(occ18, "7440|7640", "7440_7640"),
-    occ18 = str_replace(occ18, "8255|8256", "8255_8256"), 
-    # In the employment data, occ10 codes 2900 and 2960 are combined. The ratios
-    # provided are not for this combined group and it is necessary to make an 
-    # assumption about what share of the combined employment is in 2900 and 
-    # what is in 2960. Since 2960 is a catchall, I assume it is the bigger group
-    # and assign it 75% of the combined employment. To do this, I adjust the 
-    # relationships for occ10 code 2900 and drop the relationships for occ10
-    # code 2960.
+    occ18 = str_replace(occ18, "8255|8256", "8255_8256")) |>
+  # In the employment data, occ10 codes 2900 and 2960 are combined. The ratios
+  # provided are not for this combined group and it is necessary to make an 
+  # assumption about what share of the combined employment is in 2900 and 
+  # what is in 2960. Since 2960 is a catchall, I assume it is the bigger group
+  # and assign it 75% of the combined employment. To do this, I adjust the 
+  # relationships for occ10 code 2900 and drop the relationships for occ10
+  # code 2960.
+  mutate(
     ratio_10_18 = 
       if_else(
         occ10 == "2900" & occ18 == "2905", 
@@ -121,9 +124,26 @@ concordance <-
         0.25 * ratio_10_18, 
         ratio_10_18),
     occ10 = str_replace(occ10, "2900", "2900_2960"),
-    occ18 = str_replace(occ18, "2905", "2905_2970"),
-    # The weights don't always sum to 0.9999 for some occ codes. I add
-    # 0.0001 to the largest weight.
+    occ18 = str_replace(occ18, "2905", "2905_2970")) |>
+  filter(!(occ10 == "2960")) |>
+  # The weights don't always sum to 1.000 for some occ codes. I adjust
+  # the largest weight to make the sum 1.
+  mutate(
+    ratio_10_18 = 
+      if_else(
+        occ10 == "2630" & occ18 == "2640", 
+        ratio_10_18 - 0.0001, 
+        ratio_10_18),
+    ratio_10_18 = 
+      if_else(
+        occ10 == "3320" & occ18 == "3323", 
+        ratio_10_18 - 0.0001, 
+        ratio_10_18),
+    ratio_10_18 = 
+      if_else(
+        occ10 == "3420" & occ18 == "3424", 
+        ratio_10_18 + 0.0001, 
+        ratio_10_18),
     ratio_10_18 = 
       if_else(
         occ10 == "4250" & occ18 == "4251", 
@@ -131,26 +151,15 @@ concordance <-
         ratio_10_18),
     ratio_10_18 = 
       if_else(
-        occ10 == "3420" & occ18 == "3424", 
-        ratio_10_18 + 0.0001, 
-        ratio_10_18),
-    ratio_10_18 = 
-      if_else(
-        occ10 == "3420" & occ18 == "3424", 
+        occ10 == "4520" & occ18 == "4521", 
         ratio_10_18 + 0.0001, 
         ratio_10_18),
     ratio_10_18 = 
       if_else(
         occ10 == "9120" & occ18 == "9121", 
         ratio_10_18 + 0.0001, 
-        ratio_10_18),
-    ratio_10_18 = 
-      if_else(
-        occ10 == "4520" & occ18 == "4521", 
-        ratio_10_18 + 0.0001, 
-        ratio_10_18)
-    ) |>
-  filter(!(occ10 == "2960")) |>
+        ratio_10_18)) |>
+  # Join with the employment data.
   distinct() |>
   full_join(b24124_2017_occ10) |>
   # Drop military occupations (9800 and higher).
@@ -164,7 +173,9 @@ occ10 <-
 occ18 <-
   concordance |>
   summarize(emp18 = sum(emp), .by = "occ18")
-# Validate employment sums.
+# Validate employment sums. Because of adjustments made to the ratios so that 
+# the occ10 check is correct, the occ18 check will be off because those 
+# adjustments are not made in the example table in the reference document.
 occ10_check <-
   occ10 |>
   full_join(b24124_2017_occ10) |>

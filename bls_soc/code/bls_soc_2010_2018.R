@@ -14,16 +14,21 @@ library(readxl)
 #———————————————————————————————————————————————————————————————————————————————
 # Clean  -----------------------------------------------------------------------
 #———————————————————————————————————————————————————————————————————————————————
-b24124_2017_occ10 <-
+soc_2010_2018_base <-
   read_excel(
-    "blso_soc/data/raw/table-h1_h2.xlsx",
-    sheet = "Example 2017",
-    range = "a14:c540") |>
+    "bls_soc/data/raw/soc_2010_to_2018_crosswalk.xlsx",
+    sheet = "Sorted by 2010",
+    range = "a9:d909") |>
   clean_names() |>
   rename(
-    occ10_nm = x2010_occupation_description,
-    occ10    = x2010_occupation_code,
-    emp17_10 = estimate_from_table) |>
+    soc10    = x2010_soc_code,
+    soc10_nm = x2010_soc_title,
+    soc18    = x2018_soc_code,
+    soc18_nm = x2018_soc_title) |>
+  add_count(soc10, name = "soc10_n") |>
+  add_count(soc18, name = "soc18_n")
+
+|>
 #   drop_na() |>
 #   mutate(
 #     occ10    = str_replace_all(occ10, ", ", "_"),

@@ -1,0 +1,25 @@
+﻿naics,naics_desc,supersector,supersector_desc
+11,"Agriculture, Forestry, Fishing and Hunting",10,Natural Resources and Mining
+21,"Mining, Quarrying, and Oil and Gas Extraction",10,Natural Resources and Mining
+22,Utilities,40,"Trade, Transportation, and Utilities"
+23,Construction,20,Construction
+31,Manufacturing,30,Manufacturing
+32,Manufacturing,30,Manufacturing
+33,Manufacturing,30,Manufacturing
+42,Wholesale Trade,40,"Trade, Transportation, and Utilities"
+44,Retail Trade,40,"Trade, Transportation, and Utilities"
+45,Retail Trade,40,"Trade, Transportation, and Utilities"
+48,Transportation and Warehousing,40,"Trade, Transportation, and Utilities"
+49,Transportation and Warehousing,40,"Trade, Transportation, and Utilities"
+51,Information,50,Information
+52,Finance and Insurance,55,Financial Activities
+53,Real Estate and Rental and Leasing,55,Financial Activities
+54,"Professional, Scientific, and Technical Services",60,Professional and Business Services
+55,Management of Companies and Enterprises,60,Professional and Business Services
+56,Administrative and Support and Waste Management and Remediation Services,60,Professional and Business Services
+61,Educational Services,65,Education and Health Services
+62,Health Care and Social Assistance,65,Education and Health Services
+71,"Arts, Entertainment, and Recreation",70,Leisure and Hospitality
+72,Accommodation and Food Services,70,Leisure and Hospitality
+81,Other Services (except Public Administration),80,Other Services
+92,Public Administration,90,Government
